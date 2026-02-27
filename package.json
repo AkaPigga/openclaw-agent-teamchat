@@ -1,0 +1,16 @@
+{
+  "name": "@openclaw/agent-teamchat",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Configurable multi-agent identity and team-room collaboration plugin for OpenClaw",
+  "type": "module",
+  "main": "index.js",
+  "openclaw": {
+    "extensions": [
+      "./index.js"
+    ]
+  },
+  "scripts": {
+    "test": "node --test ./test/*.test.js"
+  }
+}

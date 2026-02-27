@@ -1,0 +1,389 @@
+{
+  "id": "agent-teamchat",
+  "name": "Agent TeamChat",
+  "description": "Independent team-room plugin with identity enforcement, group transcript sync, and configurable turn limits",
+  "version": "0.1.0",
+  "kind": "utility",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "identity": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "dm-only",
+              "all-feishu"
+            ],
+            "default": "dm-only"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "rewrite",
+              "block",
+              "rewrite-and-log"
+            ],
+            "default": "rewrite"
+          },
+          "strictAgentMapping": {
+            "type": "boolean",
+            "default": false
+          },
+          "deriveFromBindings": {
+            "type": "boolean",
+            "default": true
+          },
+          "agentAccounts": {
+            "type": "object",
+            "description": "Map agentId -> feishu accountId",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "agentSenderIds": {
+            "type": "object",
+            "description": "Optional map agentId -> feishu sender open_id (ou_xxx) for precise source attribution in group relay",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "teamroom": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "channel": {
+            "type": "string",
+            "default": "feishu"
+          },
+          "dedupWindowSize": {
+            "type": "integer",
+            "minimum": 10,
+            "maximum": 5000,
+            "default": 500
+          },
+          "relayCompact": {
+            "type": "boolean",
+            "default": true
+          },
+          "stickyOutput": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "default": false
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "rewrite",
+                  "block"
+                ],
+                "default": "rewrite"
+              },
+              "scope": {
+                "type": "string",
+                "enum": [
+                  "dm-only",
+                  "all-non-room"
+                ],
+                "default": "dm-only"
+              },
+              "ttlSeconds": {
+                "type": "integer",
+                "minimum": 30,
+                "maximum": 86400,
+                "default": 900
+              },
+              "seedMode": {
+                "type": "string",
+                "enum": [
+                  "forward-targets",
+                  "all-members-on-external"
+                ],
+                "default": "all-members-on-external"
+              }
+            }
+          },
+          "rooms": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Group conversation id (example: oc_xxx)"
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "default": true
+                },
+                "memberAgents": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "agentAccounts": {
+                  "type": "object",
+                  "description": "Optional room-level account override map: agentId -> accountId",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                "forwardMode": {
+                  "type": "string",
+                  "enum": [
+                    "mentions-only",
+                    "mentions-or-all",
+                    "all-members"
+                  ],
+                  "default": "mentions-or-all"
+                },
+                "includeSourceAgent": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "syncAgentMessages": {
+                  "type": "boolean",
+                  "default": true
+                },
+                "protocol": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "mainAgentId": {
+                      "type": "string",
+                      "default": "main"
+                    },
+                    "mirrorToMain": {
+                      "type": "string",
+                      "enum": [
+                        "off",
+                        "signals-only",
+                        "all-agent-messages"
+                      ],
+                      "default": "signals-only"
+                    },
+                    "signalPrefix": {
+                      "type": "string",
+                      "default": "[task]"
+                    },
+                    "injectRelayGuide": {
+                      "type": "boolean",
+                      "default": true
+                    },
+                    "maxTasks": {
+                      "type": "integer",
+                      "minimum": 10,
+                      "maximum": 2000,
+                      "default": 200
+                    },
+                    "smartTask": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false
+                        },
+                        "command": {
+                          "type": "string",
+                          "default": "openclaw"
+                        },
+                        "timeoutSeconds": {
+                          "type": "integer",
+                          "minimum": 5,
+                          "maximum": 900,
+                          "default": 120
+                        },
+                        "cooldownSeconds": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 300,
+                          "default": 20
+                        },
+                        "createWhenNoActive": {
+                          "type": "boolean",
+                          "default": true
+                        },
+                        "updateWhenActive": {
+                          "type": "boolean",
+                          "default": true
+                        },
+                        "dryRun": {
+                          "type": "boolean",
+                          "default": false
+                        }
+                      }
+                    },
+                    "taskMemory": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false
+                        },
+                        "outputDir": {
+                          "type": "string",
+                          "description": "Directory for task memory markdown files"
+                        },
+                        "fileMode": {
+                          "type": "string",
+                          "enum": [
+                            "daily",
+                            "single"
+                          ],
+                          "default": "daily"
+                        },
+                        "fileName": {
+                          "type": "string",
+                          "default": "teamroom-task-memory.md"
+                        },
+                        "summarizeByMain": {
+                          "type": "boolean",
+                          "default": true
+                        },
+                        "summaryAgentId": {
+                          "type": "string",
+                          "default": ""
+                        },
+                        "command": {
+                          "type": "string",
+                          "default": "openclaw"
+                        },
+                        "timeoutSeconds": {
+                          "type": "integer",
+                          "minimum": 5,
+                          "maximum": 900,
+                          "default": 120
+                        },
+                        "dryRun": {
+                          "type": "boolean",
+                          "default": false
+                        }
+                      }
+                    }
+                  }
+                },
+                "maxTurnsPerCycle": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 20,
+                  "default": 3
+                },
+                "cycleTtlSeconds": {
+                  "type": "integer",
+                  "minimum": 30,
+                  "maximum": 86400,
+                  "default": 900
+                },
+                "outgoingEchoWindowSeconds": {
+                  "type": "integer",
+                  "minimum": 10,
+                  "maximum": 3600,
+                  "default": 120
+                },
+                "mentionAliases": {
+                  "type": "object",
+                  "description": "Map agentId -> alias list used to detect @mentions",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "autopilot": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "trigger": {
+                      "type": "string",
+                      "enum": [
+                        "mentions-only",
+                        "mentions-or-all"
+                      ],
+                      "default": "mentions-only"
+                    },
+                    "mentionedDispatch": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "maxDispatchPerCycle": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 20
+                    },
+                    "command": {
+                      "type": "string",
+                      "default": "openclaw"
+                    },
+                    "timeoutSeconds": {
+                      "type": "integer",
+                      "minimum": 5,
+                      "maximum": 900,
+                      "default": 120
+                    },
+                    "dryRun": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "extraPrompt": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "command": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "name": {
+            "type": "string",
+            "default": "teamroom"
+          },
+          "requireAuth": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    }
+  }
+}
