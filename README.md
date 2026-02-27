@@ -30,6 +30,27 @@ sessions_send(sessionKey="agent:researcher:feishu:group:<roomId>", message="..."
 
 > ⚠️ 群里写 @xxx 不等于触发对方，必须同时调用 `sessions_send`，否则对方收不到。
 
+## ⚠️ 风险提示
+
+### mentionedDispatch（已关闭）
+
+插件支持 `autopilot.mentionedDispatch` 配置项：agent 在群里 @mention 另一个 agent 时，插件自动 dispatch 目标 agent。
+
+**当前配置：`mentionedDispatch: false`（已关闭）**
+
+关闭原因：
+- 与手动 `sessions_send` 叠加触发，导致目标 agent 被触发两次，群里出现重复回复
+- `openclaw agent` 命令不支持 `--session` 参数，dispatch 路由依赖 gateway 自动选择最近活跃 session，行为不完全可预测
+- 两步走方案（发群 + sessions_send）更可控，出问题更容易排查
+
+如需开启，在 `openclaw.json` 中设置：
+```json
+"autopilot": {
+  "mentionedDispatch": true
+}
+```
+开启后，agent @mention 时**不要再手动 sessions_send**，否则会双重触发。
+
 ## Task 信号格式
 
 ```
